@@ -1565,10 +1565,10 @@ class Data {
 
 class ReinforcementAgent {
     constructor(network, numActions) {
-        this.network = network; // Your existing neural network
-        this.numActions = numActions; // Number of possible actions
-        this.gamma = 0.01; // Discount factor for future rewards
-        this.epsilon = 0.999; // Exploration rate
+        this.network = network; 
+        this.numActions = numActions;
+        this.gamma = 0.01; 
+        this.epsilon = 0.999; 
     }
     getStateFromDots(edot, pdot, canvas) {
         let inputs = [];
