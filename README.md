@@ -1,1 +1,1 @@
-So far, this is a scratch file for feeling out what type of learning system I will use, reenforcement, or structured. I figure I need to figure out one to make the playing AI work.
+This network seems to have learned some behavior of seeking the other dot on a 16x16 grid of pixels. 
