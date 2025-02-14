@@ -355,14 +355,14 @@ class LineOP {
         return Math.atan2(this.object.y - this.target.y, this.object.x - this.target.x)
     }
     draw() {
-        let linewidthstorage = canvas_context.lineWidth
-        canvas_context.strokeStyle = this.color
-        canvas_context.lineWidth = this.width
-        canvas_context.beginPath()
-        canvas_context.moveTo(this.object.x, this.object.y)
-        canvas_context.lineTo(this.target.x, this.target.y)
-        canvas_context.stroke()
-        canvas_context.lineWidth = linewidthstorage
+        let linewidthstorage = ctx.lineWidth
+        ctx.strokeStyle = this.color
+        ctx.lineWidth = this.width
+        ctx.beginPath()
+        ctx.moveTo(this.object.x, this.object.y)
+        ctx.lineTo(this.target.x, this.target.y)
+        ctx.stroke()
+        ctx.lineWidth = linewidthstorage
     }
 }
 class Rectangle {
@@ -424,17 +424,35 @@ class Circle {
         this.strokeWidth = strokeWidth
         this.strokeColor = strokeColor
     }
-    draw() {
-        canvas_context.lineWidth = this.strokeWidth
-        canvas_context.strokeStyle = this.color
-        canvas_context.beginPath();
-        if (this.radius > 0) {
-            canvas_context.arc(this.x, this.y, this.radius, 0, (Math.PI * 2), true)
-            canvas_context.fillStyle = this.color
-            canvas_context.fill()
-            canvas_context.stroke();
-        } else {
-            // console.log("The circle is below a radius of 0, and has not been drawn. The circle is:", this)
+    draw(conech = 0) {
+        if(conech == 0){
+
+            ctx.lineWidth = this.strokeWidth
+            ctx.strokeStyle = this.color
+            ctx.beginPath();
+            if (this.radius > 0) {
+                ctx.arc(this.x, this.y, this.radius, 0, (Math.PI * 2), true)
+                ctx.fillStyle = this.color
+                ctx.fill()
+                ctx.stroke();
+            } else {
+                // console.log("The circle is below a radius of 0, and has not been drawn. The circle is:", this)
+            }
+
+        }else{
+
+            canvas_context.lineWidth = this.strokeWidth
+            canvas_context.strokeStyle = this.color
+            canvas_context.beginPath();
+            if (this.radius > 0) {
+                canvas_context.arc(this.x, this.y, this.radius, 0, (Math.PI * 2), true)
+                canvas_context.fillStyle = this.color
+                canvas_context.fill()
+                canvas_context.stroke();
+            } else {
+                // console.log("The circle is below a radius of 0, and has not been drawn. The circle is:", this)
+            }
+
         }
     }
     move() {
@@ -1029,7 +1047,7 @@ function setUp(canvas_pass, style = "#000000") {
             main()
 
         }
-    },40)
+    }, 100)
     document.addEventListener('keydown', (event) => {
         event.preventDefault()
         keysPressed[event.key] = true;
@@ -1569,7 +1587,7 @@ class ReinforcementAgent {
         this.network.becomeNetworkFrom(netw)
         this.numActions = numActions; // Number of possible actions
         this.gamma = 0.01; // Discount factor for future rewards
-        this.epsilon = 0.025; // Exploration rate
+        this.epsilon = 0.05; // Exploration rate
     }
     getStateFromDots(edot, pdot, canvas) {
         let inputs = [];
@@ -1659,11 +1677,11 @@ class ReinforcementAgent {
 
             // console.log(targetOutputs)
         if(relu == 1){
-        // this.network.calculateDeltasReLU(targetOutputs);
-        // this.network.adjustWeightsReLU();
+        this.network.calculateDeltasReLU(targetOutputs);
+        this.network.adjustWeightsReLU();
         }else{
-            // this.network.calculateDeltasSigmoid(targetOutputs);
-            // this.network.adjustWeights();
+            this.network.calculateDeltasSigmoid(targetOutputs);
+            this.network.adjustWeights();
 
         }
         }
@@ -1673,6 +1691,18 @@ class ReinforcementAgent {
 
     
 let setup_canvas = document.getElementById('canvas') //getting canvas from document
+
+
+
+let realcanvas = document.getElementById('realcanvas') //getting canvas from document
+
+realcanvas.style.background = 'black'
+
+let ctx = realcanvas.getContext('2d');
+
+
+
+
 
 setUp(setup_canvas) // setting up canvas refrences, starting timer. 
 
@@ -1771,6 +1801,186 @@ let pix3 = canvas_context.getImageData(100, 100, sizePix, sizePix)
 // c.draw()
 pix1 = canvas_context.getImageData(0, 0, sizePix, sizePix)
 
+
+let lock = 1
+
+class Viewer {
+    constructor(net, points) {
+        this.net = net
+        this.points = points
+    }
+    draw() {
+        let layers = this.net.structure.length + 1
+        this.circles = []
+        this.lines = []
+        let step = (realcanvas.height / (layers + 2))
+        for (let t = -1; t < this.net.structure.length; t++) {
+            let circlayer = []
+            if (t == -1) {
+                let chunk = realcanvas.width / (this.net.inputs.length + 1)
+                for (let r = 15; r >= 0; r--) {
+                    for (let k = (this.net.inputs.length / 16) - 1; k >= 0; k--) {
+                        console.log(r,k)
+                        let circ = new Circle((r*12) + 420 + (r%2), (k*6)+120 + (k%2), 3.5, `rgba(255,255,255,${this.net.inputs[k+(r*32)].valueOf()/2})`)
+                        if(k%2 == 1){
+                             circ = new Circle((r*12) + 420, (k*6)+120, 3.5, `rgba(0,255,255,${this.net.inputs[k+(r*32)].valueOf()/2})`)
+                        }else{
+                            circ = new Circle((r*12) + 420, (k*6)+120, 3.5, `rgba(255,0,255,${this.net.inputs[k+(r*32)].valueOf()/2})`)
+
+                        }
+                        circ.value = this.net.inputs[k + (r * 32)].valueOf()
+                        if (keysPressed['l'] || lock == 1) {
+                            circ.on = 1
+                        } else {
+                            circ.on = -1
+
+                        }
+                        circlayer.push(circ)
+                    }
+                }
+                // for (let r = 15; r >= 0; r--) {
+                //     for (let k = (this.net.inputs.length / 16) - 1; k >= 0; k--) {
+                //         console.log(r,k)
+                //         let circ = new Circle((r*12) + 420 + (r%2), (k*6)+120 + (k%2), 3.5, `rgba(255,255,255,${this.net.inputs[(k+(r*32))+0].valueOf()+.01})`)
+                //         if(k%2 == 1){
+                //              circ = new Circle((r*12) + 420, (k*6)+120, 3.5, `rgba(0,255,255,${this.net.inputs[(k+(r*32))+0].valueOf()+.01})`)
+                //         }else{
+                //             circ = new Circle((r*12) + 420, (k*6)+120, 3.5, `rgba(255,0,255,${this.net.inputs[(k+(r*32))+0].valueOf()+.01})`)
+
+                //         }
+                //         circ.value = this.net.inputs[k + (r * 16)].valueOf()
+                //         if (keysPressed['l'] || lock == 1) {
+                //             circ.on = 1
+                //         } else {
+                //             circ.on = -1
+
+                //         }
+                //         circlayer.push(circ)
+                //     }
+                // }
+
+
+
+            } else {
+                let chunk = realcanvas.width / (this.net.structure[t].length + 1)
+                for (let k = 0; k < this.net.structure[t].length; k++) {
+                    // let circ = new Circle(chunk * (k + 1), step * (t + 2), 10, `rgba(255,255,255,${this.net.structure[t][k].valueOf()})`)
+                    let circ = new Circle((300 + ((k * 12) % 120)), (step * (t + 2)) + (Math.floor(k / 10) * 12), 5, `rgba(255,255,255,${this.net.structure[t][k].valueOf()})`)
+
+                    if (t >= -1) {
+                        circ = new Circle(chunk * (k + 1), step * (t + 2), 10, `rgba(255,255,255,${this.net.structure[t][k].valueOf()})`)
+                    }
+
+
+                    circ.value = this.net.structure[t][k].valueOf()
+                    for (let g = 0; g < this.net.structure[t][k].weights.length; g++) {
+                        //console.log(this.circles, this.net.structure[t][k].weights, g)
+                        let link = new LineOP(circ, this.circles[t][g], "white", 3 * Math.abs(this.net.structure[t][k].weights[g].valueOf()))
+                        link.width = (1 * Math.abs(this.net.structure[t][k].weights[g].valueOf()))/10
+                        if (this.net.structure[t][k].weights[g].valueOf() < 0) {
+                            link.color = "red"
+                        } else {
+                            link.color = "#00ff00"
+                        }
+                        this.lines.push(link)
+                    }
+                    if (keysPressed['l'] || lock == 1) {
+                        circ.on = 1
+                    } else {
+                        circ.on = -1
+
+                    }
+                    circlayer.push(circ)
+                }
+            }
+            this.circles.push(circlayer)
+        }
+        for (let p = 0; p < this.points.length; p++) {
+            for (let t = 0; t < this.circles.length; t++) {
+                for (let k = 0; k < this.circles[t].length; k++) {
+                    if (this.circles[t][k].isPointInside(this.points[p])) {
+                        this.circles[t][k].on *= -1
+                    }
+                }
+            }
+        }
+
+
+        for (let t = 0; t < this.circles.length; t++) {
+            for (let k = 0; k < this.circles[t].length; k++) {
+                this.circles[t][k].on = 1
+            }
+        }
+        for (let t = 0; t < this.lines.length; t++) {
+            if (this.lines[t].object.on == 1 || this.lines[t].target.on == 1) {
+
+                ctx.globalAlpha = ((this.lines[t].target.value * this.lines[t].object.value))
+                // if (keysPressed['l']) {
+                    this.lines[t].draw()
+                // }
+                ctx.globalAlpha = 1
+            }
+        }
+        for (let t = 0; t < this.circles.length; t++) {
+            for (let k = 0; k < this.circles[t].length; k++) {
+                if (this.circles[t][k].on == -1) {
+                    ctx.globalAlpha = .1
+                } else {
+                    ctx.globalAlpha = 1
+                }
+                this.circles[t][k].draw()
+                ctx.globalAlpha = 1
+            }
+        }
+
+        // for (let t = 0; t < this.net.inputs.length; t++) {
+        //     for (let k = 0; k < this.net.outputs.length; k++) {
+        //         let w = this.net.structure[0][k].weights[t] + (this.net.structure[0][k].bias / 784)
+
+        //         ctx.globalAlpha = Math.abs(w) / 2
+
+        //         let y = Math.floor(t / 28)
+        //         let circ = new Circle(this.circles[1][k].x + ((t % 28) * 2) - 28, (this.circles[1][k].y + (y * 2) + 14), 2, "#FFFFFF")
+        //         if (w < 0) {
+        //             circ.color = "#FF0000"
+        //         } else {
+        //             circ.color = "#00FF00"
+
+        //         }
+        //         circ.draw()
+        //         ctx.globalAlpha = 1
+
+        //     }
+        // }
+
+
+        for (let k = 0; k < this.net.outputs.length; k++) {
+            let t = 0
+            let y = 0
+            ctx.fillStyle = "white"
+            ctx.font = '19px arial'
+            if(k == 0){
+                ctx.fillText("Down", this.circles[this.circles.length - 1][k].x + ((t % 28) * 2) - 10, (this.circles[this.circles.length - 1][k].y + (y * 2) + 94))
+
+
+            }else if (k == 1){
+                ctx.fillText("Up", this.circles[this.circles.length - 1][k].x + ((t % 28) * 2) - 10, (this.circles[this.circles.length - 1][k].y + (y * 2) + 94))
+    
+                }else if (k == 2){
+                    ctx.fillText("Right", this.circles[this.circles.length - 1][k].x + ((t % 28) * 2) - 10, (this.circles[this.circles.length - 1][k].y + (y * 2) + 94))
+        
+                    }else if (k == 3){
+                        ctx.fillText("Left", this.circles[this.circles.length - 1][k].x + ((t % 28) * 2) - 10, (this.circles[this.circles.length - 1][k].y + (y * 2) + 94))
+            
+                        }
+        }
+
+    }
+}
+
+
+
+
 let inputs = []
 for (let t = 0; t < 27; t++) {
     // if (t % 4 != 3) {
@@ -1778,6 +1988,7 @@ for (let t = 0; t < 27; t++) {
     // } else {
     // }
 }
+
 
 
 let net = new Network(inputs, [16,16, 3])
@@ -2022,9 +2233,8 @@ let avg = 0
 let olddata = []
 
 function main() {
+    
     ce++
-    // pdot.radius  = .8
-    // edot.radius  = .8
     if(pdot.doesPerimeterTouch(edot)){
         agent.epsilon*=.999995
         if(agent.epsilon <.025){
@@ -2039,7 +2249,7 @@ function main() {
 
         }
 ce = 0
-//  pdot = new Circle(Math.round(Math.random()*16), Math.round(Math.random()*16), 3, "#00DDaa")
+ pdot = new Circle(Math.round(Math.random()*16), Math.round(Math.random()*16), 3, "#00DDaa")
  edot = new Circle(Math.round(Math.random()*16), Math.round(Math.random()*16), 3, "#DD00FF")
 
     }
@@ -2081,9 +2291,9 @@ ce = 0
     //     pdot.radius--
     //     pdot.draw()
     // }
-    edot.draw()
+    edot.draw(1)
     edot.radius = 2
-    pdot.draw()
+    pdot.draw(1)
     pdot.radius = 2
 
     let reward = rewardFunction(); // Placeholder for actual reward logic
@@ -2115,7 +2325,7 @@ ce = 0
         if(keysPressed['p']){
         console.log(olddata[i])
         }
-        agent.train(olddata[i][0], olddata[i][1], olddata[i][2], olddata[i][3]);
+        // agent.train(olddata[i][0], olddata[i][1], olddata[i][2], olddata[i][3]);
     }else{
 
         if(Math.random() < .5){
@@ -2131,6 +2341,12 @@ ce = 0
         }
     }
     
+    if(keysPressed['v']){
+        ctx.clearRect(0,0,1280,1280)
+        agent.network.compute(agent.network.inputs)
+        let v = new Viewer(agent.network, [])
+        v.draw()
+    }
     
 
     return
