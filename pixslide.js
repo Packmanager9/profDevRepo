@@ -2077,7 +2077,7 @@ ce = 0
     }
 
 
-    reward = Math.tanh(-reward); // Keeps values between -1 and 1
+    reward = Math.tanh(reward); // Keeps values between -1 and 1
 
     // console.log(reward)
 
