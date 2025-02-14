@@ -1029,7 +1029,7 @@ function setUp(canvas_pass, style = "#000000") {
             main()
 
         }
-    }, 0)
+    },40)
     document.addEventListener('keydown', (event) => {
         event.preventDefault()
         keysPressed[event.key] = true;
@@ -1363,8 +1363,8 @@ class Perceptron {
 class Network {   
     constructor(inputs, layerSetupArray) {
         this.reluslime = .00001
-        this.momentum = .0005//.0025 worked for 21
-        this.learningRate = .0005  //.0025 worked for 21
+        this.momentum = .95//.0025 worked for 21
+        this.learningRate = .05  //.0025 worked for 21
         this.setup = layerSetupArray
         this.inputs = inputs
         this.structure = []
@@ -1565,24 +1565,29 @@ class Data {
 
 class ReinforcementAgent {
     constructor(network, numActions) {
-        this.network = network; 
-        this.numActions = numActions;
-        this.gamma = 0.01; 
-        this.epsilon = 0.999; 
+        this.network = network; // Your existing neural network
+        this.network.becomeNetworkFrom(netw)
+        this.numActions = numActions; // Number of possible actions
+        this.gamma = 0.01; // Discount factor for future rewards
+        this.epsilon = 0.025; // Exploration rate
     }
     getStateFromDots(edot, pdot, canvas) {
         let inputs = [];
+    
+        // Normalize positions
         let ex = edot.x / canvas.width;
         let ey = edot.y / canvas.height;
         let px = pdot.x / canvas.width;
         let py = pdot.y / canvas.height;
     
+        // Base x, y positions
         inputs.push(new Data(ex));
         inputs.push(new Data(ey));
         inputs.push(new Data(px));
         inputs.push(new Data(py));
     
-        let frequencies = [1, 2, 4];
+        // Sin/Cos transformations (multiple frequencies)
+        let frequencies = [1, 2, 4];  // Different windings
         for (let f of frequencies) {
             inputs.push(new Data(Math.sin(f * Math.PI * ex)));
             inputs.push(new Data(Math.cos(f * Math.PI * ex)));
@@ -1615,11 +1620,11 @@ class ReinforcementAgent {
 
     selectAction(state) {
         if (Math.random() < this.epsilon && !keysPressed['t']) {
-            return Math.floor(Math.random() * this.numActions); 
+            return Math.floor(Math.random() * this.numActions); // Random action
         } else {
             this.network.compute(state);
             let outputs = this.network.outputs;
-            return outputs.indexOf(Math.max(...outputs)); 
+            return outputs.indexOf(Math.max(...outputs)); // Best action
         }
     }
 
@@ -1629,21 +1634,37 @@ class ReinforcementAgent {
         
         this.network.compute(nextState);
 
-        let normalizedReward = (reward + 1) / 2; 
+
+
+        let normalizedReward = reward //(reward + 1) / 2;  // Convert tanh output from [-1, 1] to [0, 1]
 
         let maxFutureReward = Math.max(...this.network.outputs);
 
         targetOutputs[action] = normalizedReward + this.gamma * maxFutureReward;
 
+
+        if(keysPressed['e']){
+
+            console.log("Loss:", Math.abs(targetOutputs[action] - this.network.outputs[action]));
+            console.log("Delta:", this.network.structure[0][0].delta);
+            console.log("Weight Change:", this.network.structure[0][0].weights[0].change);
+        }
+        
+
+        // targetOutputs[action] = reward + this.gamma * maxFutureReward;
+
         if(keysPressed[' ']){
             console.log(targetOutputs, this.network.outputs)
         }else{
+
+            // console.log(targetOutputs)
         if(relu == 1){
-            this.network.calculateDeltasReLU(targetOutputs);
-            this.network.adjustWeightsReLU();
+        // this.network.calculateDeltasReLU(targetOutputs);
+        // this.network.adjustWeightsReLU();
         }else{
-            this.network.calculateDeltasSigmoid(targetOutputs);
-            this.network.adjustWeights();
+            // this.network.calculateDeltasSigmoid(targetOutputs);
+            // this.network.adjustWeights();
+
         }
         }
     }
@@ -1976,7 +1997,7 @@ for(let t = 0;t<16*16;t+=1){
 
 // Main function to start the process
 let numActions = 4
-let networker = new Network(new Array(16*16*2).fill(0), [256, 128, 64, 32, 16, numActions] );
+let networker = new Network(new Array(16*16*2).fill(0), [16, 16, numActions] );
 let agent = new ReinforcementAgent(networker, numActions);
 
 function rewardFunction() {
@@ -2002,8 +2023,10 @@ let olddata = []
 
 function main() {
     ce++
+    // pdot.radius  = .8
+    // edot.radius  = .8
     if(pdot.doesPerimeterTouch(edot)){
-        agent.epsilon*=.995
+        agent.epsilon*=.999995
         if(agent.epsilon <.025){
             agent.epsilon = .025
         }
@@ -2011,9 +2034,12 @@ function main() {
         tim++
         avg += ce
         avg/=tim
-        console.log(ce, tim, avg, agent.epsilon)
+        if(tim%1000 == 1){
+            console.log(ce, tim, avg, agent.epsilon)
+
+        }
 ce = 0
- pdot = new Circle(Math.round(Math.random()*16), Math.round(Math.random()*16), 3, "#00DDaa")
+//  pdot = new Circle(Math.round(Math.random()*16), Math.round(Math.random()*16), 3, "#00DDaa")
  edot = new Circle(Math.round(Math.random()*16), Math.round(Math.random()*16), 3, "#DD00FF")
 
     }
@@ -2021,9 +2047,9 @@ ce = 0
 
     let zh = linkz.hypotenuse()
 
-    // let state = agent.getStateFromCanvas(canvas);
+    let state = agent.getStateFromCanvas(canvas);
     let oldstate = agent.getStateFromCanvas(canvas);
-    let action = agent.selectAction(oldstate);
+    let action = agent.selectAction(state);
 
 
     if(action == 0){
@@ -2077,14 +2103,14 @@ ce = 0
     }
 
 
-    reward = Math.tanh(reward); // Keeps values between -1 and 1
+    // reward = Math.tanh(reward); // Keeps values between -1 and 1
 
     // console.log(reward)
 
-    // let nextState = agent.getStateFromCanvas(canvas);
+    let nextState = agent.getStateFromCanvas(canvas);
     let newstate = agent.getStateFromCanvas(canvas);
   
-    if(Math.random() < .9 && olddata.length > 0){
+    if(Math.random() < .95 && olddata.length > 0){
         let i = Math.floor(Math.random()*olddata.length)
         if(keysPressed['p']){
         console.log(olddata[i])
@@ -2092,7 +2118,7 @@ ce = 0
         agent.train(olddata[i][0], olddata[i][1], olddata[i][2], olddata[i][3]);
     }else{
 
-        if(Math.random() < .9){
+        if(Math.random() < .5){
         if(olddata.length < 10000){
             olddata.push([oldstate,action, reward, newstate])
         }else{
